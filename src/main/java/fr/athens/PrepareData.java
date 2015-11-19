@@ -82,41 +82,38 @@ public class PrepareData {
         bw.close();
     }
 
-    public static void calcStats(String directoryPath, String[] filePaths, AlgorithmResult result) throws IOException {
+    public static void calcStats(String directoryPath, AlgorithmResult result) throws IOException {
         Set<Long> userIds = new HashSet<>();
         Set<Long> tweetIds = new HashSet<>();
-        for (String filePath : filePaths) {
-            String line = null;
-            try (BufferedReader br = new BufferedReader(new FileReader(directoryPath+"/"+filePath))) {
-                while ((line = br.readLine()) != null) {
-                    JsonObject tweet = new JsonParser().parse(line).getAsJsonObject();
+        String line = null;
+        try (BufferedReader br = new BufferedReader(new FileReader(directoryPath+"/stats"))) {
+            while ((line = br.readLine()) != null) {
+                JsonObject tweet = new JsonParser().parse(line).getAsJsonObject();
 
-                    JsonArray hashtagsElem = tweet.getAsJsonObject("entities").getAsJsonArray("hashtags");
-                    Set<String> uniqueHashtags = new HashSet<>();
-                    for (JsonElement hashtagElem : hashtagsElem) {
-                        String hashtag = hashtagElem.getAsJsonObject().get("text").getAsString();
-                        uniqueHashtags.add(hashtag.toLowerCase());
-                    }
+                JsonArray hashtagsElem = tweet.getAsJsonArray("hashtags");
+                Set<String> uniqueHashtags = new HashSet<>();
+                for (JsonElement hashtagElem : hashtagsElem) {
+                    String hashtag = hashtagElem.getAsString();
+                    uniqueHashtags.add(hashtag.toLowerCase());
+                }
 
-                    boolean contributed = false;
-                    for (String resultHashtag : result.getHashtags()) {
-                        if (uniqueHashtags.contains(resultHashtag)) {
-                            contributed = true;
-                            break;
-                        }
-                    }
-
-                    if (contributed) {
-                        long userId = tweet.getAsJsonObject("user").get("id").getAsLong();
-                        userIds.add(userId);
-                        long tweetId = tweet.get("id").getAsLong();
-                        tweetIds.add(tweetId);
+                boolean contributed = false;
+                for (String resultHashtag : result.getHashtags()) {
+                    if (uniqueHashtags.contains(resultHashtag)) {
+                        contributed = true;
+                        break;
                     }
                 }
-            } catch (Exception ex) {
-//                System.err.println(line);
+
+                if (contributed) {
+                    long userId = tweet.get("userId").getAsLong();
+                    userIds.add(userId);
+                    long tweetId = tweet.get("tweetId").getAsLong();
+                    tweetIds.add(tweetId);
+                }
             }
-            System.out.println("Stats calc: " + filePath);
+        } catch (Exception ex) {
+//                System.err.println(line);
         }
         result.setUniqueUsers(userIds.size());
         result.setUniqueTweets(tweetIds.size());

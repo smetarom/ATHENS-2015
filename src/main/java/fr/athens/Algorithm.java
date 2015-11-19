@@ -16,7 +16,7 @@ import java.util.Set;
 public class Algorithm {
     public static final int MAX_NODES = 10;
     public static final int MIN_NODES = 2;
-    public static final int SUBGRAPHS = 5;
+    public static final int SUBGRAPHS = 20;
 
     public static List<AlgorithmResult> denseGraph(String filePath) throws IOException {
         Set<String> skipHashtags = new HashSet<>();

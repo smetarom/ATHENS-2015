@@ -18,25 +18,25 @@ public class Main {
         String[] paris2 = {"Paris-2015-2-1", "Paris-2015-2-10", "Paris-2015-2-11", "Paris-2015-2-12", "Paris-2015-2-13", "Paris-2015-2-14", "Paris-2015-2-15",  "Paris-2015-2-16",  "Paris-2015-2-17"};
 
         // Test
-        processTopic("/home/smetana/Hadoop/athensDataTwitter/example", new String[] {"NewYork-2015-2-23"});
+//        processTopic("/home/smetana/Hadoop/athensDataTwitter/example", new String[] {"NewYork-2015-2-23"});
 
 //        processTopic("/home/smetana/Hadoop/athensDataTwitter/NewYorkOneWeek", newyorks);
-//        processTopic("/home/smetana/Hadoop/athensDataTwitter/ParisJanuary/ParisSearchJan", paris1);
+        processTopic("/home/smetana/Hadoop/athensDataTwitter/ParisJanuary/ParisSearchJan", paris1);
 //        processTopic("/home/smetana/Hadoop/athensDataTwitter/ParisFebruary/ParisSearchFeb", paris2);
 //        processTopic("/home/smetana/Hadoop/athensDataTwitter/Oscars", oscars);
     }
 
     private static void processTopic(String folder, String[] files) throws IOException {
-        PrepareData.prepareHashtags(folder, files);
+//        PrepareData.prepareHashtags(folder, files);
 
 //        PrepareData.filterFile(folder, files);
-//        List<AlgorithmResult> results= Algorithm.denseGraph(folder + "/graph");
-//        for (AlgorithmResult result : results) {
-//            PrepareData.calcStats(folder, files, result);
-//        }
-//        PrepareData.printResultToFile(folder, results);
-//        for (AlgorithmResult result : results) {
-//            System.out.println(result);
-//        }
+        List<AlgorithmResult> results= Algorithm.denseGraph(folder + "/graph");
+        for (AlgorithmResult result : results) {
+            PrepareData.calcStats(folder, result);
+        }
+        PrepareData.printResultToFile(folder, results);
+        for (AlgorithmResult result : results) {
+            System.out.println(result);
+        }
     }
 }
