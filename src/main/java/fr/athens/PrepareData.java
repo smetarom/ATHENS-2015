@@ -14,34 +14,42 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author Roman Smetana
  */
 public class PrepareData {
 
-    public static void filterFile(String filePath) throws IOException {
+    public static void filterFile(String directoryPath, String[] filePaths) throws IOException {
         List<List<String>> list = new LinkedList<>();
 
-        try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                JsonObject tweet = new JsonParser().parse(line).getAsJsonObject();
+        for (String filePath : filePaths) {
+            String line = null;
+            try (BufferedReader br = new BufferedReader(new FileReader(directoryPath+"/"+filePath))) {
+                while ((line = br.readLine()) != null) {
+                    JsonObject tweet = new JsonParser().parse(line).getAsJsonObject();
 
-                JsonArray hashtagsElem = tweet.getAsJsonObject("entities").getAsJsonArray("hashtags");
-                List<String> hashtags = new ArrayList<>(hashtagsElem.size());
-                for (JsonElement hashtagElem : hashtagsElem) {
-                    String hashtag = hashtagElem.getAsJsonObject().get("text").getAsString();
-                    hashtags.add(hashtag);
+                    JsonArray hashtagsElem = tweet.getAsJsonObject("entities").getAsJsonArray("hashtags");
+                    Set<String> uniqueHashtags = new HashSet<>();
+                    for (JsonElement hashtagElem : hashtagsElem) {
+                        String hashtag = hashtagElem.getAsJsonObject().get("text").getAsString();
+                        uniqueHashtags.add(hashtag.toLowerCase());
+                    }
+                    List<String> hashtags = new ArrayList<>(uniqueHashtags);
+                    Collections.sort(hashtags);
+                    if (!list.contains(hashtags)) {
+                        list.add(hashtags);
+                    }
                 }
-                Collections.sort(hashtags);
-                if (!list.contains(hashtags)) {
-                    list.add(hashtags);
-                }
+            } catch (Exception ex) {
+                System.err.println(line);
             }
+            System.out.println("Parsed: " + filePath);
         }
 
         Map<String, Integer> map = new HashMap<>();
@@ -59,9 +67,8 @@ public class PrepareData {
             }
         }
 
-        File file = new File(filePath + "-parsed");
+        File file = new File(directoryPath+"/graph");
 
-        // if file doesnt exists, then create it
         if (!file.exists()) {
             file.createNewFile();
         }
