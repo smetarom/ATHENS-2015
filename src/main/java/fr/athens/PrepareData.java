@@ -47,7 +47,7 @@ public class PrepareData {
                     }
                 }
             } catch (Exception ex) {
-                System.err.println(line);
+//                System.err.println(line);
             }
             System.out.println("Parsed: " + filePath);
         }
@@ -82,4 +82,99 @@ public class PrepareData {
         bw.close();
     }
 
+    public static void calcStats(String directoryPath, String[] filePaths, AlgorithmResult result) throws IOException {
+        Set<Long> userIds = new HashSet<>();
+        Set<Long> tweetIds = new HashSet<>();
+        for (String filePath : filePaths) {
+            String line = null;
+            try (BufferedReader br = new BufferedReader(new FileReader(directoryPath+"/"+filePath))) {
+                while ((line = br.readLine()) != null) {
+                    JsonObject tweet = new JsonParser().parse(line).getAsJsonObject();
+
+                    JsonArray hashtagsElem = tweet.getAsJsonObject("entities").getAsJsonArray("hashtags");
+                    Set<String> uniqueHashtags = new HashSet<>();
+                    for (JsonElement hashtagElem : hashtagsElem) {
+                        String hashtag = hashtagElem.getAsJsonObject().get("text").getAsString();
+                        uniqueHashtags.add(hashtag.toLowerCase());
+                    }
+
+                    boolean contributed = false;
+                    for (String resultHashtag : result.getHashtags()) {
+                        if (uniqueHashtags.contains(resultHashtag)) {
+                            contributed = true;
+                            break;
+                        }
+                    }
+
+                    if (contributed) {
+                        long userId = tweet.getAsJsonObject("user").get("id").getAsLong();
+                        userIds.add(userId);
+                        long tweetId = tweet.get("id").getAsLong();
+                        tweetIds.add(tweetId);
+                    }
+                }
+            } catch (Exception ex) {
+//                System.err.println(line);
+            }
+            System.out.println("Stats calc: " + filePath);
+        }
+        result.setUniqueUsers(userIds.size());
+        result.setUniqueTweets(tweetIds.size());
+    }
+
+    public static void printResultToFile(String folder, List<AlgorithmResult> results) throws IOException {
+        File file = new File(folder+"/result-"+System.currentTimeMillis());
+
+        if (!file.exists()) {
+            file.createNewFile();
+        }
+
+        FileWriter fw = new FileWriter(file.getAbsoluteFile());
+        BufferedWriter bw = new BufferedWriter(fw);
+        for (AlgorithmResult result : results) {
+            bw.write(result.toString());
+            bw.newLine();
+        }
+        bw.close();
+    }
+
+    public static void prepareHashtags(String directoryPath, String[] filePaths) throws IOException {
+        File file = new File(directoryPath+"/stats");
+
+        if (!file.exists()) {
+            file.createNewFile();
+        }
+        FileWriter fw = new FileWriter(file.getAbsoluteFile());
+        BufferedWriter bw = new BufferedWriter(fw);
+        for (String filePath : filePaths) {
+            String line = null;
+            try (BufferedReader br = new BufferedReader(new FileReader(directoryPath+"/"+filePath))) {
+                while ((line = br.readLine()) != null) {
+                    JsonObject tweet = new JsonParser().parse(line).getAsJsonObject();
+
+                    JsonArray hashtagsElem = tweet.getAsJsonObject("entities").getAsJsonArray("hashtags");
+                    Set<String> uniqueHashtags = new HashSet<>();
+                    for (JsonElement hashtagElem : hashtagsElem) {
+                        String hashtag = hashtagElem.getAsJsonObject().get("text").getAsString();
+                        uniqueHashtags.add(hashtag.toLowerCase());
+                    }
+
+                    JsonObject finalTweet = new JsonObject();
+                    finalTweet.addProperty("userId", tweet.getAsJsonObject("user").get("id").getAsLong());
+                    finalTweet.addProperty("tweetId", tweet.get("id").getAsLong());
+                    JsonArray h = new JsonArray();
+                    for (String uniqueHashtag : uniqueHashtags) {
+                        h.add(uniqueHashtag);
+                    }
+                    finalTweet.add("hashtags", h);
+                    bw.write(finalTweet.toString());
+                    bw.newLine();
+                }
+            } catch (Exception ex) {
+//                System.err.println(line);
+            }
+            System.out.println("Tweet prepare: " + filePath);
+        }
+        bw.close();
+    }
 }

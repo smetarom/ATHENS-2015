@@ -3,8 +3,10 @@ package fr.athens;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -14,8 +16,20 @@ import java.util.Set;
 public class Algorithm {
     public static final int MAX_NODES = 10;
     public static final int MIN_NODES = 2;
+    public static final int SUBGRAPHS = 5;
 
-    public static void denseGraph(String filePath) throws IOException {
+    public static List<AlgorithmResult> denseGraph(String filePath) throws IOException {
+        Set<String> skipHashtags = new HashSet<>();
+        List<AlgorithmResult> results = new ArrayList<>(SUBGRAPHS);
+        for (int i = 0; i < SUBGRAPHS; i++) {
+            AlgorithmResult result = denseGraph(filePath, skipHashtags);
+            skipHashtags.addAll(result.getHashtags());
+            results.add(result);
+        }
+        return results;
+    }
+
+    public static AlgorithmResult denseGraph(String filePath, Set<String> skipHashtags) throws IOException {
         Map<String, Node> map = new HashMap<>();
         Set<Node> nodes = new HashSet<>();
 
@@ -23,6 +37,9 @@ public class Algorithm {
             String line;
             while ((line = br.readLine()) != null) {
                 String[] rawInput = line.split("\\s+");
+                if (skipHashtags.contains(rawInput[0]) || skipHashtags.contains(rawInput[0])) {
+                    continue;
+                }
                 Node node1 = map.get(rawInput[0]);
                 if (node1 == null) {
                     node1 = new Node(rawInput[0]);
@@ -44,7 +61,7 @@ public class Algorithm {
         }
 
         double maxDensity = Double.MIN_VALUE;
-        Set<Node> maxSubgraph = null;
+        Set<Node> maxSubgraph = new HashSet<>();
         while (!nodes.isEmpty()) {
             Node minNode = findMinDegree(nodes);
             nodes.remove(minNode);
@@ -60,10 +77,12 @@ public class Algorithm {
             System.out.println(minNode.getName() + " " + nodes.size());
         }
 
-        System.out.println("Best result:");
+        AlgorithmResult result = new AlgorithmResult();
+        result.setDensity(maxDensity);
         for (Node node : maxSubgraph) {
-            System.out.println("#" + node.getName());
+            result.addHashtag(node.getName());
         }
+        return result;
     }
 
     private static Node findMinDegree(Set<Node> nodes) {
@@ -88,9 +107,10 @@ public class Algorithm {
 
     private static double calcDensity(Set<Node> nodes) {
         double edges = 0;
+        int numNodes = nodes.size();
         for (Node node : nodes) {
-            edges += node.getNodes().size();
+            edges += node.getWeightDegree();
         }
-        return edges / nodes.size();
+        return edges / numNodes;
     }
 }
